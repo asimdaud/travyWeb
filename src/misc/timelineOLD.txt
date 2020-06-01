@@ -1,0 +1,392 @@
+import React from "react";
+import Post from "../../components/post.jsx";
+import {
+  // Button,
+  Card,
+  // CardHeader,
+  // CardBody,
+  // NavItem,
+  // NavLink,
+  // Nav,
+  // Progress,
+  // Table,
+  Container
+  // Row,
+  // Col
+} from "reactstrap";
+//  import * as firebase from 'firebase';
+import {firebase} from "../../services/firebase";
+// import {
+//   CardImg, CardText,  CardTitle, CardSubtitle
+// } from 'reactstrap';
+// import DemoNavbar from "components/Navbars/DemoNavbar.jsx";
+import UserNavbar from "components/Navbars/UserNavbar.jsx";
+
+
+const user3 = JSON.parse(localStorage.getItem('uid'));
+
+    
+// const user3 = "niKoNaL9NeOPx7iW4jDUi5Cqyht2"
+
+class Timeline extends React.Component {
+
+
+
+    // user3 = firebase.auth().currentUser;
+  firestoreUsersRef = firebase.firestore().collection("users");
+  firestorePostRef = firebase.firestore().collection("posts");
+  firestoreFollowingRef = firebase.firestore().collection("following").doc(user3)
+  .collection("userFollowing");
+
+  constructor(props){
+    super(props);
+
+  this.state = {
+    user3 : JSON.parse(localStorage.getItem("uid")),
+    posts: [],
+    userData: {},
+    followedUsers: [],
+    avatar:""
+ 
+  };
+}
+
+
+  state = {
+
+user3 : JSON.parse(localStorage.getItem('uid')),
+    posts: [],
+    userData: {},
+    followedUsers: [],
+    avatar:""
+  };
+
+  componentWillMount= () =>{
+    // this.getPosts();
+    user3 : JSON.parse(localStorage.getItem('uid'));
+
+    this.getProfilePic();
+    this.getFollowedUsers();
+    // this.getFollowingPosts();
+  
+  }
+
+  componentDidMount = ()=>{
+    // this.getProfilePic();
+    this.getFollowingPosts();
+    localStorage.removeItem('Fuid');
+
+  }
+
+
+// Get all the users the current user3 is following
+getFollowedUsers = async() => {
+  let users = [];
+  await this.firestoreFollowingRef.get().then((querySnapshot)=>{
+    querySnapshot.forEach((docSnap) =>{
+      users.push(docSnap.id);
+      
+    });
+  // this.setState({followedUsers: users});
+  });
+  this.setState({followedUsers: users});
+  // console.log(this.state.followedUsers);
+
+}
+
+// Get all posts of each user3 and push them in a same array
+getFollowingPosts = async()=>{
+  
+  // 1. Get all the users the current user3 is following
+  await this.getFollowedUsers().then(async()=>{
+  // console.log(this.state.followedUsers);
+
+  let users = this.state.followedUsers;
+  let allPosts =[];
+  
+  // 2. Get posts of each user3 seperately and putting them in one array.
+  //  users.forEach(async (user3) => {
+     for(const user3 of users){
+
+
+    await this.getProfilePic(user3).then(async()=>{
+      
+      console.log("Avatar:" +this.state.avatar)
+    await this.firestoreUsersRef.doc(user3).get().then(async(document)=>{
+      this.setState({userData: document.data()})
+
+    
+    console.log(document.data());
+      await this.firestorePostRef.doc(user3).collection("userPosts").orderBy("time", "desc").limit(5).get().then((snapshot) => {
+        snapshot.forEach((doc) => {
+
+          let article={
+            username: this.state.userData.username,
+            userId: user3,
+            title: "post",
+            avatar: this.state.avatar,
+            image: doc.data().image,
+            cta: "cta", 
+            caption: doc.data().caption,
+            location: doc.data().location,
+            postId: doc.data().postId,
+            timeStamp: doc.data().time,
+            // likes:0,
+            horizontal: true
+          }
+          allPosts.push(article);
+        });
+      });
+      
+  this.setState({posts: allPosts});
+    });
+   
+  });
+  // allPosts.sort(function(a,b){
+  //   // Turn your strings into dates, and then subtract them
+  //   // to get a value that is either negative, positive, or zero.
+  //   return new Date(b.timeStamp) - new Date(a.timeStamp) ;
+  // });
+  
+  // this.setState({posts: allPosts});
+  // console.log(this.state.posts);
+    }
+   });
+}
+
+
+
+
+
+  getProfilePic = async(user3) =>{
+    const firebaseProfilePic = await firebase.storage().ref().child("profilePics/("+user3+")ProfilePic");
+    firebaseProfilePic.getDownloadURL().then((url)=> {
+    
+      // console.log("got profile pic of" +user3 + url);
+      this.setState({avatar: url});
+      console.log(this.state.avatar);
+
+      return url;
+
+    }).catch((error) => {
+      // Handle any errors
+      switch (error.code) {
+        case 'storage/object-not-found':
+          // File doesn't exist
+          this.setState({avatar: "https://clinicforspecialchildren.org/wp-content/uploads/2016/08/avatar-placeholder.gif"}) 
+          return "https://clinicforspecialchildren.org/wp-content/uploads/2016/08/avatar-placeholder.gif";
+          // break;
+        }
+      alert(error);
+    });
+}
+
+
+  writeNewPost(
+    user3, 
+    // username, 
+    picture, caption, location) {
+    // A post entry.
+    var postData = {
+      username: this.state.userData.username,
+      userId: user3,
+      title: "post",
+      avatar: this.state.avatar,
+      cta: "cta",
+     image: picture,
+     caption:caption,
+     location:location,
+     postId:"",
+     timeStamp:""
+    };
+      // Get a key for a new Post.
+    var newPostKey = firebase.database().ref().child('posts').push().key;
+  
+    // Write the new post's data simultaneously in the posts list and the user3's post list.
+    var updates = {};
+    updates['/posts/' + newPostKey] = postData;
+    updates['/user3-posts/' + user3 + '/' + newPostKey] = postData;
+  
+    return firebase.database().ref().update(updates);
+  }
+
+
+
+
+  render() {
+    return (
+<>
+<UserNavbar/>
+<main className="profile-page" ref="main">
+<section className="section-profile-cover section-shaped my-0">
+            {/* Circles background */}
+            <div className="shape shape-style-1 shape-default alpha-4">
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+            {/* SVG separator */}
+            <div className="separator separator-bottom separator-skew">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                preserveAspectRatio="none"
+                version="1.1"
+                viewBox="0 0 2560 100"
+                x="0"
+                y="0"
+              >
+                <polygon
+                  className="fill-white"
+                  points="2560 0 2560 100 0 100"
+                />
+              </svg>
+            </div>
+          </section>
+
+          <section class="section section-blog-info">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-8 mx-auto">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="h3 mb-0">Activity feed</h5>
+              </div>
+              <div class="card-header d-flex align-items-center">
+                <div class="d-flex align-items-center">
+                  <a href="javascript:;">
+                    {/* <img src="../assets/img/faces/team-1.jpg" class="avatar"> */}
+                  </a>
+                  <div class="mx-3">
+                    <a href="javascript:;" class="text-dark font-weight-600 text-sm">John Snow</a>
+                    <small class="d-block text-muted">3 days ago</small>
+                  </div>
+                </div>
+                <div class="text-right ml-auto">
+                  <button type="button" class="btn btn-sm btn-primary btn-icon">
+                    <span class="btn-inner--icon icon-big"><i class="ni ni-fat-add"></i></span>
+                    <span class="btn-inner--text">Follow</span>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <p class="mb-4">
+                  Personal profiles are the perfect way for you to grab their attention and persuade recruiters to continue reading your CV because you’re telling them from the off exactly why they should hire you.
+                </p>
+                {/* <img alt="Image placeholder" src="../assets/img/sections/mohamed.jpg" class="img-fluid rounded"> */}
+                <div class="row align-items-center my-3 pb-3 border-bottom">
+                  <div class="col-sm-6">
+                    <div class="icon-actions">
+                      <a href="javascript:;" class="like active">
+                        <i class="ni ni-like-2"></i>
+                        <span class="text-muted">150</span>
+                      </a>
+                      <a href="javascript:;">
+                        <i class="ni ni-chat-round"></i>
+                        <span class="text-muted">36</span>
+                      </a>
+                      <a href="javascript:;">
+                        <i class="ni ni-curved-next"></i>
+                        <span class="text-muted">12</span>
+                      </a>
+                    </div>
+                  </div>
+                  <div class="col-sm-6 d-none d-sm-block">
+                    <div class="d-flex align-items-center justify-content-sm-end">
+                      <div class="avatar-group">
+                        <a href="javascript:;" class="avatar avatar-xs rounded-circle" data-toggle="tooltip" data-original-title="Jessica Rowland">
+                          {/* <img alt="Image placeholder" src="../assets/img/faces/team-1.jpg" class=""> */}
+                        </a>
+                        <a href="javascript:;" class="avatar avatar-xs rounded-circle" data-toggle="tooltip" data-original-title="Audrey Love">
+                          {/* <img alt="Image placeholder" src="../assets/img/faces/team-2.jpg" class="rounded-circle"> */}
+                        </a>
+                        <a href="javascript:;" class="avatar avatar-xs rounded-circle" data-toggle="tooltip" data-original-title="Michael Lewis">
+                          {/* <img alt="Image placeholder" src="../assets/img/faces/team-3.jpg" class="rounded-circle"> */}
+                        </a>
+                      </div>
+                      <small class="pl-2 font-weight-bold">and 30+ more</small>
+                    </div>
+                  </div>
+                </div>
+                {/* <!-- Comments --> */}
+                <div class="mb-1">
+                  <div class="media media-comment">
+                    {/* <img alt="Image placeholder" class="media-comment-avatar rounded-circle" src="../assets/img/faces/team-1.jpg"> */}
+                    <div class="media-body">
+                      <div class="media-comment-text">
+                        <h6 class="h5 mt-0">Michael Lewis</h6>
+                        <p class="text-sm lh-160">You have the opportunity to play this game of life you need to appreciate every moment. A lot of people don’t appreciate the moment until it’s passed.</p>
+                        <div class="icon-actions">
+                          <a href="javascript:;" class="like active">
+                            <i class="ni ni-like-2"></i>
+                            <span class="text-muted">3 likes</span>
+                          </a>
+                          <a href="javascript:;">
+                            <i class="ni ni-curved-next"></i>
+                            <span class="text-muted">2 shares</span>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="media media-comment">
+                    {/* <img alt="Image placeholder" class="media-comment-avatar rounded-circle" src="../assets/img/faces/team-2.jpg"> */}
+                    <div class="media-body">
+                      <div class="media-comment-text">
+                        <h6 class="h5 mt-0">Jessica Stones</h6>
+                        <p class="text-sm lh-160">I always felt like I could do anything. That’s the main thing people are controlled by! Thoughts- their perception of themselves! They're slowed down.</p>
+                        <div class="icon-actions">
+                          <a href="javascript:;" class="like active">
+                            <i class="ni ni-like-2"></i>
+                            <span class="text-muted">10 likes</span>
+                          </a>
+                          <a href="javascript:;">
+                            <i class="ni ni-curved-next"></i>
+                            <span class="text-muted">1 share</span>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="media align-items-center mt-5">
+                    {/* <img alt="Image placeholder" class="avatar avatar-lg rounded-circle mb-4" src="../assets/img/faces/team-3.jpg"> */}
+                    <div class="media-body">
+                      <form>
+                        <textarea class="form-control" placeholder="Write your comment" rows="1"></textarea>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+          <section className="section section-blog-info">
+          
+      <Container className="mt--8 pb-5" style={{ width: '55%' }}>
+        <Card>
+<a>sup</a>
+
+        </Card>
+      <Card className="card-profile shadow mt--300">
+           
+{
+    this.state.posts.map((post, postindex)=>(
+        <Post item = {post} key = {postindex}/>
+  
+    ))
+    }
+</Card>      
+</Container>  
+</section>
+</main>
+</>
+  );
+  }
+}
+export default Timeline;
