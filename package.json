@@ -1,0 +1,88 @@
+{
+  "name": "argon-design-system-react",
+  "version": "1.0.0",
+  "description": "React",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "keywords": [
+    "react",
+    "reactjs",
+    "argon",
+    "argon-react",
+    "design",
+    "design-react",
+    "argon-design",
+    "argon-design-react",
+    "kit",
+    "react-kit",
+    "argon-design-system",
+    "argon-design-system-react",
+    "design-system-react"
+  ],
+  "author": "",
+  "license": "",
+  "bugs": {
+    "url": ""
+  },
+  "homepage": "",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "install:clean": "rm -rf node_modules/ && rm -rf package-lock.json && npm install && npm start",
+    "compile-sass": "node-sass src/assets/scss/argon-design-system-react.scss src/assets/css/argon-design-system-react.css",
+    "minify-sass": "node-sass src/assets/scss/argon-design-system-react.scss src/assets/css/argon-design-system-react.min.css --output-style compressed",
+    "map-sass": "node-sass src/assets/scss/argon-design-system-react.scss src/assets/css/argon-design-system-react.css --source-map true"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ],
+  "dependencies": {
+    "@material-ui/core": "^4.9.5",
+    "@material-ui/icons": "^4.9.1",
+    "bootstrap": "^4.5.0",
+    "classnames": "2.2.6",
+    "firebase": "^7.5.0",
+    "google-map-react": "^1.1.6",
+    "google-maps-react": "^2.0.2",
+    "headroom.js": "0.9.4",
+    "mapbox-gl": "^1.10.1",
+    "moment": "^2.24.0",
+    "node-sass": "^4.13.1",
+    "nouislider": "13.1.5",
+    "react": "^16.8.6",
+    "react-datetime": "2.16.3",
+    "react-dom": "^16.8.6",
+    "react-geocode": "^0.2.1",
+    "react-geosuggest": "^2.12.1",
+    "react-google-autocomplete": "^1.1.2",
+    "react-google-maps": "^9.4.5",
+    "react-ionicons": "^3.1.4",
+    "react-loading": "^2.0.3",
+    "react-map-gl": "^5.2.5",
+    "react-map-gl-heatmap-overlay": "^1.1.4",
+    "react-router": "5.0.0",
+    "react-router-dom": "^5.0.0",
+    "react-scripts": "^3.3.1",
+    "react-shadow-scroll": "^1.0.0",
+    "react-smooth-image": "^1.1.0",
+    "reactstrap": "^8.0.0",
+    "reverse-geocoding": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/googlemaps": "3.30.19",
+    "@types/markerclustererplus": "2.1.33",
+    "@types/react": "16.8.16",
+    "typescript": "3.4.5"
+  }
+}
