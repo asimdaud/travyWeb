@@ -1,0 +1,400 @@
+import React from "react";
+// reactstrap components
+import {
+  // UncontrolledCollapse,
+  // NavbarBrand,
+  // Navbar,
+  // NavItem,
+  // NavLink,
+  // Nav,
+  Button,
+  Card,
+  // CardHeader,
+  CardBody,
+  // FormGroup,
+  // Form,
+  Input,
+  UncontrolledTooltip,
+  // Row,
+  // Col,
+  Container,
+  UncontrolledCollapse,
+  Collapse
+} from "reactstrap";
+import * as firebase from "firebase";
+// import PropTypes from "prop-types";
+import { Link } from "react-router-dom";
+import CommentItem from '../components/CommentItem';
+
+// const user3 = JSON.parse(localStorage.getItem('uid'));
+// const firestorePostRef =  firebase.firestore().collection("posts").doc(user3).collection("userPosts");
+// const user = JSON.parse(localStorage.getItem("user"));
+
+class Post extends React.Component {
+  user = firebase.auth().currentUser;
+
+  state = {
+    user: firebase.auth().currentUser,
+
+    likes: 0,
+    comments: [],
+    ifLiked: false,
+    newLikeDocId: "(" + this.user.uid + ")like",
+    userId: this.props.item.userId,
+    commentsArray:[],
+    getComments: false,
+    // openCommentInput: false,
+    commentInput:"",
+    currentUsername:""
+  };
+
+  firestorePostRef = firebase
+    .firestore()
+    .collection("posts")
+    .doc(this.state.userId)
+    .collection("userPosts");
+
+    firestoreUsersRef = firebase.firestore().collection("users"); 
+
+  componentDidMount = () => {
+    const { item } = this.props;
+
+    // this.setState({userId: item.userId});
+
+    console.log("state userId: " + this.state.userId);
+    this.firestorePostRef
+      .doc(item.postId)
+      .collection("likes")
+      .get()
+      .then(querySnapshot => {
+        if (querySnapshot.size > 0) {
+          this.setState({ likes: querySnapshot.size });
+        }
+      });
+      
+      this.getCommentData()
+
+  };
+
+  componentWillMount = () => {
+    const { item } = this.props;
+
+    // console.log("hahahaha" + item.image);
+
+    this.firestorePostRef
+      .doc(item.postId)
+      .collection("likes")
+      .doc(this.state.newLikeDocId)
+      .get()
+      .then(snapshot => {
+        if (snapshot.exists) {
+          this.setState({ ifLiked: true });
+        } else {
+          this.setState({ ifLiked: false });
+        }
+      });
+  };
+
+  toggleLike = () => {
+    // document.body.style.color = "red";
+    const noOfLikes = this.state.likes;
+    const { item } = this.props;
+    if (!this.state.ifLiked) {
+      this.firestorePostRef
+        .doc(item.postId)
+        .collection("likes")
+        .doc(this.state.newLikeDocId)
+        .set({
+          userId: this.user.uid
+        })
+        .then(() => {
+          this.state.likes = noOfLikes + 1;
+          this.setState({ ifLiked: true });
+        });
+    } else {
+      this.firestorePostRef
+        .doc(item.postId)
+        .collection("likes")
+        .doc(this.state.newLikeDocId)
+        .delete()
+        .then(() => {
+          if (noOfLikes === 0) this.state.likes = 0;
+          this.state.likes = noOfLikes - 1;
+          this.setState({ ifLiked: false });
+        });
+    }
+  };
+
+
+  getCurrentUsername(){
+    this.firestoreUsersRef.doc(this.user.uid).get().then((document)=>{
+      this.setState({currentUsername: document.data().username})
+  });
+  }
+
+  postComment = ()=>{
+    const {item} = this.props;
+    let myComment = this.state.commentInput;
+    let myusername = this.state.currentUsername;
+    
+    if(myComment!=""){
+      firebase.firestore().collection("comments").doc(item.postId).collection("userComments").add({
+        
+      }).then((comment)=>{
+        firebase.firestore().collection("comments").doc(item.postId).collection("userComments").doc(comment.id).set({
+          commentId: comment.id,
+          username: myusername,
+          comment: myComment
+        }).then(()=>{
+
+          this.setState({commentInput:""});
+          
+          this.getCommentData();
+        })
+
+      }).catch((err)=>{
+        alert(err);
+      })
+    }
+  }
+
+
+  getCommentData(){
+    let commArray = [];
+    const {item} = this.props;
+    // this.firestorePostRef.doc(this.state.userId).collection("userPosts").doc(this.props.item.postId).collection("comments").
+    //POST K hisab sa lao
+    firebase.firestore().collection("comments").doc(item.postId).collection("userComments").get().then((querySnapshot)=>{
+  
+      querySnapshot.forEach((doc)=>{
+        commArray.push(doc.data())
+        
+      // console.log(doc.data()+commArray);
+      })
+      this.setState({commentsArray: commArray});
+    }).catch((err)=>{
+      alert(err);
+    });
+  }
+
+
+
+  renderAvatar() {
+    const {
+      //  avatar, styles,
+      item
+    } = this.props;
+
+    // if (!item.avatar) return null;
+    return (
+      <Link to="/friendspage">
+        <img
+          className="rounded-circle"
+          width="45"
+          src={item.avatar}
+          alt=""
+          // onClick={localStorage.setItem('Fuid', JSON.stringify(this.state.userId))}
+        />
+      </Link>
+    );
+  }
+
+  togglePage = () => {
+    // document.body.style.color = "red";
+    // const frndId = this.state.userId;
+    const { item } = this.props;
+    // if (!this.state.ifLiked) {
+    this.firestorePostRef
+      .doc(item.postId)
+      .collection("likes")
+      .doc(this.state.newLikeDocId)
+      .set({
+        userId: this.user.uid
+      })
+      .then(() => {
+        {
+          localStorage.setItem("Fuid", JSON.stringify(this.state.userId));
+        }
+      });
+  };
+
+  handleChange = e => {
+    // this.setState({
+    //   [e.target.id]: e.target.value
+    // });
+    this.setState({commentInput: e.target.value});
+    this.setState({username: this.getCurrentUsername()})
+  
+  };
+
+  commentFunc = () => (
+    <>
+      {/* <Button   color="outline-info"
+            size="sm"
+            className="mr-4"
+           id="toggler" style={{ marginBottom: '1rem' }}>
+        Comment
+      </Button> */} 
+      <UncontrolledCollapse toggler="#toggler">
+        <Card>
+
+          <Input
+            // className="form-control-alternative"
+            // defaultValue=""
+            id="commentInput"
+            placeholder="Add a comment!"
+            type="text"
+            onChange={this.handleChange}
+            // onChange={word => this.setState({commentInput: word})}
+            value = {this.state.commentInput}
+          />
+          <Button 
+          type="submit"
+          onClick={this.postComment}
+          >Comment</Button>
+        </Card>
+      </UncontrolledCollapse>
+    </>
+  );
+
+
+  
+  renderComments = () =>{
+
+    const {navigation} = this.props;
+    if(this.state.getComments){
+    if(this.state.commentsArray.length){
+      console.log(this.state.commentsArray);
+
+    return (
+<div>
+      {/* <Block> */}
+        <ul
+        data={this.state.commentsArray}
+        renderItem={({ item}) => (
+          <CommentItem
+            comment = {item}
+            postId = {this.props.item.postId}
+            userId = {this.state.userId}
+          
+            />
+            )}
+            keyExtractor={item => item.commentId}
+        />
+      {/* </Block> */}
+     </div> 
+    )
+  }
+  }}
+
+
+
+
+  render() {
+    const { item } = this.props;
+    return (  
+      <Container>
+        {/* <div className="card gedf-card" > */}
+        {/* <div className="justify-content-center" fluid > */}
+        <div
+          className="d-flex justify-content-between align-items-center"
+          // style={{border:'1px'}}
+        >
+          <div className="d-flex justify-content-between align-items-center">
+            {/* <div className="mr-2" onClick={this.openPage}> */}
+            <div
+              // className="card-profile-image mr-2"
+              onClick={this.togglePage}
+            >
+              {/* <img className="rounded-circle" width="45" src={this.item.image} alt=""/> */}
+              {this.renderAvatar()}
+
+              {/* {"Pic"} */}
+            </div>
+            <div className="ml-2">
+              <div className="h5 m-0">{item.username}</div>
+              {/* <div className="h7 text-muted">{this.state.timer}</div> */}
+            </div>
+          </div>
+          <div>
+            <div className="dropdown">
+              <i className="fa fa-map-marker" id="tooltip556394744">
+
+              {/* <UncontrolledTooltip
+                delay={0}
+                placement="top"
+                target="tooltip556394744"
+                trigger="hover focus"
+              > */}
+              {" "}
+                {/* {item.location} */}
+              {/* </UncontrolledTooltip> */}
+              </i>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div>
+            <p> </p>
+
+            <img
+              src={item.image}
+              className="mx-auto d-block rounded"
+              style={{ width: "100%" }}
+              alt=""
+            />
+          </div>
+        </div>
+        <div className="card-footer">
+          {/* <i class="fa fa-heart" aria-hidden="true"> </i> */}
+
+          <Button
+            color="outline-danger"
+            size="sm"
+            onClick={this.toggleLike}
+            className={
+              this.state.ifLiked === true
+                ? "fa fa-heart mr-4"
+                : "fa fa-heart-o mr-4"
+            }
+          >
+            {" " + this.state.likes}
+          </Button>
+
+          <Button
+            color="outline-info"
+            size="sm"
+            id="toggler"
+            className="fa fa-comments-o mr-4"
+          >
+            {""}
+          </Button>
+          <p></p>
+          {this.commentFunc()}
+
+          <a href="#" className="card-link text-info">
+            {/* <i className="fa fa-comment text-info"></i> Comment{" "} */}
+          </a>
+          {/* <a href="#" className="card-link text-info"><i className="fa fa-mail-forward"></i> Share</a> */}
+        </div>
+        <div className="card-body">
+          <p className="card-text">{item.caption}</p>
+        </div>
+
+        <div className="card-body">
+          <p className="card-text">{this.renderComments()}</p>
+        </div>
+
+
+        {/* </div> */}
+      </Container>
+    );
+  }
+}
+
+// Post.propTypes = {
+//   item: PropTypes.object
+// };
+
+export default Post;
